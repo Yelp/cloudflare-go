@@ -73,7 +73,7 @@ func (api *API) makeRequest(method, uri string, params interface{}) ([]byte, err
 	var reqBody io.Reader
 	if params != nil {
 		json, err := json.Marshal(params)
-		log.Printf("[DEBUG] Request is %s", string(json))
+		log.Printf("[DEBUG] Request to %s is %s", uri, string(json))
 		if err != nil {
 			return nil, errors.Wrap(err, "error marshalling params to JSON")
 		}
@@ -239,23 +239,6 @@ type KeylessSSL struct {
 type KeylessSSLResponse struct {
 	Response
 	Result []KeylessSSL `json:"result"`
-}
-
-// CustomPage represents a custom page configuration.
-type CustomPage struct {
-	CreatedOn      string    `json:"created_on"`
-	ModifiedOn     time.Time `json:"modified_on"`
-	URL            string    `json:"url"`
-	State          string    `json:"state"`
-	RequiredTokens []string  `json:"required_tokens"`
-	PreviewTarget  string    `json:"preview_target"`
-	Description    string    `json:"description"`
-}
-
-// CustomPageResponse represents the response from the custom pages endpoint.
-type CustomPageResponse struct {
-	Response
-	Result []CustomPage `json:"result"`
 }
 
 // WAFPackage represents a WAF package configuration.

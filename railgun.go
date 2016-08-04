@@ -19,7 +19,7 @@ type Railgun struct {
 	Version        string    `json:"version"`
 	Revision       string    `json:"revision"`
 	ActivationKey  string    `json:"activation_key"`
-	ActivatedOn    time.Time `json:"activated_on"`
+	ActivatedOn    string    `json:"activated_on"`
 	CreatedOn      time.Time `json:"created_on"`
 	ModifiedOn     time.Time `json:"modified_on"`
 	UpgradeInfo    struct {
@@ -49,8 +49,12 @@ type railgunsResponse struct {
 // API reference:
 // 	https://api.cloudflare.com/#railgun-create-railgun
 // 	POST /railguns
-func (api *API) CreateRailgun(name string) (Railgun, error) {
+func (api *API) CreateRailgun(name string, org Organization) (Railgun, error) {
 	uri := "/railguns"
+	if org.ID != "" {
+		uri = "/organizations/" + org.ID + uri
+	}
+
 	params := struct {
 		Name string `json:"name"`
 	}{
@@ -71,12 +75,15 @@ func (api *API) CreateRailgun(name string) (Railgun, error) {
 // API reference:
 //  https://api.cloudflare.com/#railgun-list-railguns
 //  GET /railguns
-func (api *API) ListRailguns(options RailgunListOptions) ([]Railgun, error) {
+func (api *API) ListRailguns(options RailgunListOptions, org Organization) ([]Railgun, error) {
 	v := url.Values{}
 	if options.Direction != "" {
 		v.Set("direction", options.Direction)
 	}
 	uri := "/railguns" + "?" + v.Encode()
+	if org.ID != "" {
+		uri = "/organizations/" + org.ID + uri
+	}
 	res, err := api.makeRequest("GET", uri, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errMakeRequestError)
@@ -92,8 +99,12 @@ func (api *API) ListRailguns(options RailgunListOptions) ([]Railgun, error) {
 // API reference:
 // 	https://api.cloudflare.com/#railgun-railgun-details
 // 	GET /railguns/:identifier
-func (api *API) RailgunDetails(railgunID string) (Railgun, error) {
+func (api *API) RailgunDetails(railgunID string, org Organization) (Railgun, error) {
 	uri := "/railguns/" + railgunID
+	if org.ID != "" {
+		uri = "/organizations/" + org.ID + uri
+	}
+
 	res, err := api.makeRequest("GET", uri, nil)
 	if err != nil {
 		return Railgun{}, errors.Wrap(err, errMakeRequestError)
@@ -109,8 +120,11 @@ func (api *API) RailgunDetails(railgunID string) (Railgun, error) {
 // API reference:
 // 	https://api.cloudflare.com/#railgun-get-zones-connected-to-a-railgun
 // 	GET /railguns/:identifier/zones
-func (api *API) RailgunZones(railgunID string) ([]Zone, error) {
+func (api *API) RailgunZones(railgunID string, org Organization) ([]Zone, error) {
 	uri := "/railguns/" + railgunID + "/zones"
+	if org.ID != "" {
+		uri = "/organizations/" + org.ID + uri
+	}
 	res, err := api.makeRequest("GET", uri, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, errMakeRequestError)
@@ -126,8 +140,11 @@ func (api *API) RailgunZones(railgunID string) ([]Zone, error) {
 // API reference:
 //  https://api.cloudflare.com/#railgun-enable-or-disable-a-railgun
 //  PATCH /railguns/:identifier
-func (api *API) enableRailgun(railgunID string, enable bool) (Railgun, error) {
+func (api *API) enableRailgun(railgunID string, org Organization, enable bool) (Railgun, error) {
 	uri := "/railguns/" + railgunID
+	if org.ID != "" {
+		uri = "/organizations/" + org.ID + uri
+	}
 	params := struct {
 		Enabled bool `json:"enabled"`
 	}{
@@ -148,24 +165,27 @@ func (api *API) enableRailgun(railgunID string, enable bool) (Railgun, error) {
 // API reference:
 //  https://api.cloudflare.com/#railgun-enable-or-disable-a-railgun
 //  PATCH /railguns/:identifier
-func (api *API) EnableRailgun(railgunID string) (Railgun, error) {
-	return api.enableRailgun(railgunID, true)
+func (api *API) EnableRailgun(railgunID string, org Organization) (Railgun, error) {
+	return api.enableRailgun(railgunID, org, true)
 }
 
 // DisableRailgun enables a Railgun for all zones connected to it.
 // API reference:
 //  https://api.cloudflare.com/#railgun-enable-or-disable-a-railgun
 //  PATCH /railguns/:identifier
-func (api *API) DisableRailgun(railgunID string) (Railgun, error) {
-	return api.enableRailgun(railgunID, false)
+func (api *API) DisableRailgun(railgunID string, org Organization) (Railgun, error) {
+	return api.enableRailgun(railgunID, org, false)
 }
 
 // DeleteRailgun disables and deletes a Railgun.
 // API reference:
 // 	https://api.cloudflare.com/#railgun-delete-railgun
 // 	DELETE /railguns/:identifier
-func (api *API) DeleteRailgun(railgunID string) error {
+func (api *API) DeleteRailgun(railgunID string, org Organization) error {
 	uri := "/railguns/" + railgunID
+	if org.ID != "" {
+		uri = "/organizations/" + org.ID + uri
+	}
 	if _, err := api.makeRequest("DELETE", uri, nil); err != nil {
 		return errors.Wrap(err, errMakeRequestError)
 	}
